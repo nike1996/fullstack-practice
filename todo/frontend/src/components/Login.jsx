@@ -3,6 +3,23 @@ import axios from 'axios';
 
 const backendUrl = 'http://localhost:3001';
 
+const divStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    padding: '10px'
+}
+
+const formStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+    gap: '10px',
+    padding: '10px'
+}
+
 export default function Login() {
     const [error, setError] = useState(null);
 
@@ -24,10 +41,10 @@ export default function Login() {
     }
 
     return (
-        <div>
+        <div style={divStyle}>
             <h1>Login</h1>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            <form onSubmit={loginHandler}>
+            <form onSubmit={loginHandler} style={formStyle}>
                 <input id="email" type="text" placeholder="Email" />
                 <input id="password" type="password" placeholder="Password" />
                 <button type="submit">Login</button>

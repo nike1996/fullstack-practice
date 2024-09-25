@@ -99,8 +99,31 @@ const HomePage = () => {
         }
     };
 
+    const divStyle = {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%',
+        padding: '10px'
+    }
+
+    const ulStyle = {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        padding: '10px'
+    }
+
+    const liStyle = {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '10px',
+        width: '100%'
+    }
+
     return (
-        <div>
+        <div style={divStyle}>
             <header>
                 <input
                     type="text"
@@ -111,9 +134,9 @@ const HomePage = () => {
                 <button onClick={addTask}>Add</button>
             </header>
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            <ul>
+            <ul style={ulStyle}>
                 {tasks.map((task) => (
-                    <li key={task.id}>
+                    <li key={task.id} style={liStyle}>
                         <select
                             value={task.status}
                             onChange={(e) => updateTaskStatus(task.id, e.target.value)}

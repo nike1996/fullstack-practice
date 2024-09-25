@@ -41,17 +41,23 @@ function authenticateToken(req, res, next) {
     });
 }
 
-async function createUser(email, password) {
+async function createUser(name, email, password) {
     const passwordHash = await bcrypt.hash(password, 10);
     const id = uuid();
-    let db = await dbPromise;
-    db.run('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)', [id, email, passwordHash]);
-    return { id, email, password_hash: passwordHash };
+    try {
+        let db = await dbPromise;
+        await db.run('INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)', [id, name, email, passwordHash]);
+        return { id, name, email, password_hash: passwordHash };
+    } catch (error) {
+        console.log(error);
+    }
+
 }
 
 async function createUserHandler(req, res) {
-    const { email, password } = req.body;
-    createUser(email, password);
+    const { name, email, password } = req.body;
+    createUser(name, email, password);
+    res.status(201).send();
 }
 
 async function loginUser(req, res) {
@@ -117,8 +123,8 @@ async function deleteTodoHandler(req, res) {
 async function generateSampleData(req, res) {
     console.log('Generating sample data');
     let users = [
-        await createUser('user1@gmail.com', 'password'),
-        await createUser('user2@gmail.com', 'password')
+        await createUser('user1', 'user1@gmail.com', 'password'),
+        await createUser('user2', 'user2@gmail.com', 'password')
     ]
     console.log(users);
     let todos = [
@@ -130,13 +136,16 @@ async function generateSampleData(req, res) {
 
 }
 
-app.get('/api/todos', authenticateToken, getTodosHandler);
+app.get('/api/todos', authenticateToken, getTodosHandler); // get todos for a user
 app.post('/api/signup', createUserHandler);
 app.post('/api/login', loginUser);
-app.post('/api/todos', authenticateToken, createTodoHandler);
+app.post('/api/todos', authenticateToken, createTodoHandler); // create a todo for a user
 app.put('/api/todos/:id', authenticateToken, updateTodoHandler);
 app.delete('/api/todos/:id', authenticateToken, deleteTodoHandler);
 app.post('/api/generate', generateSampleData);
+app.get('/health', (req, res) => {
+    res.status(200).send({ message: 'Server is running' });
+});
 const port = 3001;
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
