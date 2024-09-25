@@ -4,9 +4,14 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuid } from 'uuid';
 import dbPromise from './database.js';
 import cookieParser from 'cookie-parser';
-
+import cors from 'cors';
 
 const app = express();
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    credentials: true,
+}
+app.use(cors(corsOptions));
 // only for development (use env variable in production)
 const SECRET = "mysecret";
 app.use(express.json());
@@ -20,7 +25,7 @@ function generateToken(user) {
 // middleware to authenticate jwt token
 function authenticateToken(req, res, next) {
     // print cookies
-    console.log(req.cookies);
+    // console.log(req.cookies);
     const token = req.cookies.jwt;
     if (!token) {
         return res.sendStatus(401);
@@ -87,7 +92,13 @@ async function updateTodoHandler(req, res) {
         const { task, status } = req.body;
         const { id } = req.params;
         let db = await dbPromise;
-        await db.run('UPDATE todos SET task = ?, status = ? WHERE id = ?', [task, status, id]);
+        if (task && status) {
+            await db.run('UPDATE todos SET task = ?, status = ? WHERE id = ?', [task, status, id]);
+        } else if (task) {
+            await db.run('UPDATE todos SET task = ? WHERE id = ?', [task, id]);
+        } else if (status) {
+            await db.run('UPDATE todos SET status = ? WHERE id = ?', [status, id]);
+        }
         res.status(200).json({ message: 'Todo updated successfully' });
     }
     catch (error) {
@@ -126,7 +137,7 @@ app.post('/api/todos', authenticateToken, createTodoHandler);
 app.put('/api/todos/:id', authenticateToken, updateTodoHandler);
 app.delete('/api/todos/:id', authenticateToken, deleteTodoHandler);
 app.post('/api/generate', generateSampleData);
-const port = 3002;
+const port = 3001;
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });

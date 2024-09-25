@@ -1,27 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
+const backendUrl = 'http://localhost:3001';
 
 const HomePage = () => {
     const [tasks, setTasks] = useState([]);
     const [newTask, setNewTask] = useState('');
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     useEffect(() => {
-        // Fetch tasks when the component mounts
         const fetchTasks = async () => {
             try {
-                const response = await axios.get('/api/todo', {
+                const response = await axios.get(backendUrl + '/api/todos', {
                     withCredentials: true
                 });
                 setTasks(response.data);
             } catch (err) {
-                setError('Failed to fetch tasks');
+                if (err.response && err.response.status >= 400 && err.response.status < 500) {
+                    navigate('/login');
+                } else {
+                    setError('Failed to fetch tasks');
+                }
             }
         };
 
         fetchTasks();
-    }, []);
-
+    }, [navigate]);
     async function addTask() {
         if (!newTask.trim()) {
             setError('Task cannot be empty');
@@ -29,12 +35,12 @@ const HomePage = () => {
         }
 
         try {
-            await axios.post('/api/todo', { task: newTask, status: 'pending' }, {
+            await axios.post(backendUrl + '/api/todos', { task: newTask, status: 'pending' }, {
                 withCredentials: true
             });
             setNewTask('');
             setError('');
-            const response = await axios.get('/api/todo', {
+            const response = await axios.get(backendUrl + '/api/todos', {
                 withCredentials: true
             });
             setTasks(response.data);
@@ -43,12 +49,26 @@ const HomePage = () => {
         }
     };
 
-    async function updateTaskStatus(id, status) {
+    async function updateTaskName(id, name) {
         try {
-            await axios.put(`/api/todo/${id}`, { status }, {
+            await axios.put(`${backendUrl}/api/todos/${id}`, { task: name }, {
                 withCredentials: true
             });
-            const response = await axios.get('/api/todo', {
+            const response = await axios.get(backendUrl + '/api/todos', {
+                withCredentials: true
+            });
+            setTasks(response.data);
+        } catch (err) {
+            setError('Failed to update task name');
+        }
+    }
+
+    async function updateTaskStatus(id, status) {
+        try {
+            await axios.put(`${backendUrl}/api/todos/${id}`, { status }, {
+                withCredentials: true
+            });
+            const response = await axios.get(backendUrl + '/api/todos', {
                 withCredentials: true
             });
             setTasks(response.data);
@@ -59,10 +79,10 @@ const HomePage = () => {
 
     async function deleteTask(id) {
         try {
-            await axios.delete(`/api/todo/${id}`, {
+            await axios.delete(backendUrl + `/api/todos/${id}`, {
                 withCredentials: true
             });
-            const response = await axios.get('/api/todo', {
+            const response = await axios.get(backendUrl + '/api/todos', {
                 withCredentials: true
             });
             setTasks(response.data);
@@ -71,21 +91,17 @@ const HomePage = () => {
         }
     };
 
-    async function handleLogout() {
-        try {
-            await axios.post('/api/logout', {}, {
-                withCredentials: true
-            });
-            // Redirect to login page or handle logout
-        } catch (err) {
-            setError('Failed to logout');
+    const handleKeyPress = (e, id) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            updateTaskName(id, e.target.innerText);
+            e.target.blur();
         }
     };
 
     return (
         <div>
             <header>
-                <button onClick={handleLogout}>Logout</button>
                 <input
                     type="text"
                     placeholder="Add new task"
@@ -107,7 +123,12 @@ const HomePage = () => {
                             <option value="done">Done</option>
                             <option value="completed">Completed</option>
                         </select>
-                        <span contentEditable>{task.task}</span>
+                        <span
+                            contentEditable
+                            onKeyPress={(e) => handleKeyPress(e, task.id)}
+                        >
+                            {task.task}
+                        </span>
                         <button onClick={() => deleteTask(task.id)}>Delete</button>
                     </li>
                 ))}
